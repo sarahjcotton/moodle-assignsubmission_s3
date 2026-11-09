@@ -223,10 +223,16 @@ class s3 {
                 $return['status'] = true;
                 return $return;
             }
-            // The restore was completed and expiration date is in the future, so return the expiration date.
-            if (str_contains($head['Restore'], 'ongoing-request="false"') && strtotime($head['Expires']) >= time()) {
+            // The restore was completed; extract the expiry date from the Restore header value itself,
+            // e.g. ongoing-request="false", expiry-date="Fri, 13 Nov 2026 00:00:00 GMT"
+            if (
+                str_contains($head['Restore'], 'ongoing-request="false"') &&
+                preg_match('/expiry-date="([^"]+)"/', $head['Restore'], $matches) &&
+                ($expiry = strtotime($matches[1])) !== false &&
+                $expiry >= time()
+            ) {
                 $return['status'] = true;
-                $return['expiry-date'] = strtotime($head['Expires']);
+                $return['expiry-date'] = $expiry;
                 return $return;
             }
         }
