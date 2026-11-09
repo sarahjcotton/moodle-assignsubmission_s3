@@ -233,6 +233,7 @@ class s3 {
             ]);
         } catch (S3Exception $e) {
             $this->trigger_error_event("Restore object failed: {$e->getMessage()}");
+            return $return;
         }
         $statuscode = $result['@metadata']['statusCode'];
         // Action is either already processed or accepted, either way, valid.

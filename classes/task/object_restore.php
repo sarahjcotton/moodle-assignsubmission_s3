@@ -62,6 +62,10 @@ class object_restore extends scheduled_task {
                 return;
             }
             $restored = $s3->restore_object($requestedobject->get('uuid'));
+            if ($s3->has_error()) {
+                mtrace("Unable to restore object {$requestedobject->get('uuid')} due to: {$s3->get_error()}");
+                continue;
+            }
             if ($restored['status']) {
                 // If restored and have an expiration date update status to restored and add an expiration date.
                 if ($restored['expiry-date']) {
