@@ -199,6 +199,7 @@ class s3 {
         $return = [
             'status' => false,
             'expiry-date' => null,
+            'standard-storage' => false,
         ];
 
         // Get the objects metadata.
@@ -206,6 +207,14 @@ class s3 {
             'Bucket' => $this->bucket,
             'Key' => $key,
         ]);
+
+        // Objects in STANDARD storage (e.g. small files <128KB that lifecycle rules skip) cannot be restored.
+        // Return early so the caller can reset the Moodle status back to standard.
+        $glacierclasses = ['GLACIER', 'DEEP_ARCHIVE'];
+        if (!in_array($head['StorageClass'] ?? 'STANDARD', $glacierclasses)) {
+            $return['standard-storage'] = true;
+            return $return;
+        }
 
         // If we have a restore in progress or requested it will come back in the head.
         if (isset($head['Restore'])) {

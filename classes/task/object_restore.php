@@ -66,6 +66,13 @@ class object_restore extends scheduled_task {
                 mtrace("Unable to restore object {$requestedobject->get('uuid')} due to: {$s3->get_error()}");
                 continue;
             }
+            if ($restored['standard-storage']) {
+                // Object is still in STANDARD storage (e.g. <128KB, skipped by S3 lifecycle rules).
+                // Reset to standard status so it can be downloaded directly.
+                mtrace("Object: {$requestedobject->get('uuid')} is in STANDARD storage, resetting status");
+                $requestedobject->set('status', assignsubmission_s3::STATUS_REMOTE_STANDARD)->save();
+                continue;
+            }
             if ($restored['status']) {
                 // If restored and have an expiration date update status to restored and add an expiration date.
                 if ($restored['expiry-date']) {
