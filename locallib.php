@@ -475,11 +475,18 @@ class assign_submission_s3 extends assign_submission_plugin {
     public function submission_is_empty(stdClass $data): bool {
         global $USER;
 
+        $instance = $this->assignment->get_instance();
+        if ($instance->teamsubmission) {
+            $submission = $this->assignment->get_group_submission($USER->id, 0, false);
+        } else {
+            $submission = $this->assignment->get_user_submission($USER->id, false);
+        }
+        if (!$submission) {
+            return true;
+        }
         // Pending records (submission of 0) are uploads that never completed, so don't count.
-        return !assignsubmission_s3::count_records_select(
-            'usermodified = ? AND assignment = ? AND submission <> 0',
-            [$USER->id, $this->assignment->get_course_module()->id],
-        );
+        $records = assignsubmission_s3::get_records(['submission' => $submission->id]);
+        return empty($records);
     }
 
     /**
