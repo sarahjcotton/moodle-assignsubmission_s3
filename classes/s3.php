@@ -179,7 +179,8 @@ class s3 {
                 $this->client->getCommand('GetObject', [
                     'Bucket' => $this->bucket,
                     'Key' => $object->uuid,
-                    'ResponseContentDisposition' => 'attachment; filename="' . $object->name . '"',
+                    'ResponseContentDisposition' => 'attachment; filename="' .
+                        rawurlencode($object->name) . '"; filename*=UTF-8\'\'' . rawurlencode($object->name),
                     'ResponseContentType' => $object->mimetype,
                 ]),
                 '+3 hour'
