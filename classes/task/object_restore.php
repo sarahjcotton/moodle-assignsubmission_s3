@@ -51,6 +51,8 @@ class object_restore extends scheduled_task {
      * @return void
      */
     public function execute(?MockHandler $handler = null): void {
+        $haserrors = false;
+
         // Get all requested items: STATUS_REMOTE_REQUESTED.
         $requestedobjects = assignsubmission_s3::get_requested();
 
@@ -59,11 +61,13 @@ class object_restore extends scheduled_task {
             $s3 = new s3($requestedobject->get_assign(), $handler);
             if ($s3->has_error()) {
                 mtrace($s3->get_error());
-                return;
+                $haserrors = true;
+                continue;
             }
             $restored = $s3->restore_object($requestedobject->get('uuid'));
             if ($s3->has_error()) {
                 mtrace("Unable to restore object {$requestedobject->get('uuid')} due to: {$s3->get_error()}");
+                $haserrors = true;
                 continue;
             }
             if ($restored['standard-storage']) {
@@ -113,6 +117,10 @@ class object_restore extends scheduled_task {
                     mtrace("Object: {$requestedobject->get('uuid')} restore in progress");
                 }
             }
+        }
+
+        if ($haserrors) {
+            throw new \moodle_exception('error', 'assignsubmission_s3', '', 'One or more objects failed to restore. See task log for details.');
         }
 
         // Get all restored items: STATUS_REMOTE_RESTORED.
