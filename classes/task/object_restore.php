@@ -88,29 +88,27 @@ class object_restore extends scheduled_task {
                     $requestedobject->save();
                     // Notify all requesters that the file is ready to be downloaded.
                     $requests = assignsubmission_s3_requests::get_records(['ass3id' => $requestedobject->get('id')]);
-                    $messagesubject = get_string('message:restored:subject', 'assignsubmission_s3');
                     $assign = $requestedobject->get_assign();
                     $url = new moodle_url('/mod/assign/view.php', ['id' => $assign->get_course_module()->id]);
-                    $messagebody = get_string(
-                        'message:restored:body',
-                        'assignsubmission_s3',
-                        [
-                            'course' => $assign->get_course()->fullname,
-                            'assignment' => $assign->get_course_module()->get_name(),
-                            'link' => $url->out(),
-                            'expiry' => userdate($restored['expiry-date']),
-                        ],
-                    );
+                    $a = (object) [
+                        'course' => $assign->get_course()->fullname,
+                        'assignment' => $assign->get_course_module()->get_name(),
+                        'link' => $url->out(),
+                        'expiry' => userdate($restored['expiry-date']),
+                    ];
                     $message = new message();
                     $message->component = 'assignsubmission_s3';
                     $message->name = 'restored';
                     $message->userfrom = core_user::get_noreply_user();
-                    $message->subject = $messagesubject;
-                    $message->fullmessagehtml = $messagebody;
+                    $message->subject = get_string('message:restored:subject', 'assignsubmission_s3');
+                    $message->fullmessagehtml = get_string('message:restored:body:html', 'assignsubmission_s3', $a);
                     $message->fullmessageformat = FORMAT_HTML;
-                    $message->fullmessage = html_to_text($messagebody);
+                    $message->fullmessage = get_string('message:restored:body', 'assignsubmission_s3', $a);
+                    $message->smallmessage = get_string('message:restored:subject', 'assignsubmission_s3');
+                    $message->contexturl = $url->out(false);
+                    $message->contexturlname = $assign->get_course_module()->get_name();
                     foreach ($requests as $request) {
-                        $message->userto = $request->get('requester');
+                        $message->userto = $request->get_requester();
                         message_send($message);
                     }
                 } else {
