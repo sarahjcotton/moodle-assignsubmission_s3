@@ -108,7 +108,7 @@ class object_restore extends scheduled_task {
                     $message->contexturl = $url->out(false);
                     $message->contexturlname = $assign->get_course_module()->get_name();
                     foreach ($requests as $request) {
-                        $message->userto = $request->get_requester();
+                        $message->userto = core_user::get_user($request->get('requester'));
                         message_send($message);
                     }
                 } else {
